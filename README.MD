@@ -30,7 +30,13 @@ channel = ["json", "bincode"]
 地址 `ws://<ip>:<port>/<roomid>/<channel>`
 
 如`ws://localhost:10200/477317922/json`
-## json示例
+## json
+示例如下
 ![json示例](./.readme/example.png)
 ## 事件类型
 参见[这个仓库](https://github.com/4t145/bilive-danmaku)
+
+## 关于bincode
+bincode是二进制编码的数据结构，如果你对接此服务的应用是用rust编写的，bincode可能可以给你提供更高的正反序列化效率
+
+关于bincode请参见[此仓库](./https://github.com/bincode-org/bincode)
