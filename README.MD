@@ -39,4 +39,4 @@ channel = ["json", "bincode"]
 ## 关于bincode
 bincode是二进制编码的数据结构，如果你对接此服务的应用是用rust编写的，bincode可能可以给你提供更高的正反序列化效率
 
-关于bincode请参见[此仓库](./https://github.com/bincode-org/bincode)
+关于bincode请参见[此仓库](https://github.com/bincode-org/bincode)
