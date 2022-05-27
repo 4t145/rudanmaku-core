@@ -22,7 +22,7 @@ channel = ["json, bincode"]
 
 [[room]]
 roomid = 5229
-channel = ["json"]
+channel = ["json, bincode"]
 ```
 
 
@@ -30,3 +30,7 @@ channel = ["json"]
 地址 `ws://<ip>:<port>/<roomid>/<channel>`
 
 如`ws://localhost:10200/477317922/json`
+## json示例
+![json示例](./.readme/example.png)
+## 事件类型
+参见[这个仓库](https://github.com/4t145/bilive-danmaku)

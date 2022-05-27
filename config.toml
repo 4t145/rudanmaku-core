@@ -10,3 +10,6 @@ channel = ["json"]
 roomid = 5229
 channel = ["json"]
 
+[[room]]
+roomid = 23805066
+channel = ["json", "bincode"]
