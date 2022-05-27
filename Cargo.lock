@@ -755,7 +755,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rudanmaku-core"
+name = "rudanmaku"
 version = "0.1.0"
 dependencies = [
  "bilive-danmaku",
