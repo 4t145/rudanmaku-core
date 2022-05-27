@@ -1,0 +1,28 @@
+[package]
+name = "rudanmaku-core"
+author = "4t145"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+toml = "0.5.9"
+serde = "1.0"
+serde_json = "1.0.79"
+futures-util = "*"
+
+[dependencies.tokio-tungstenite]
+version = "0.17.1"
+
+[dependencies.tokio]
+version = "*"
+features = ["full"]
+
+
+[dependencies.bilive-danmaku]
+
+git = "https://github.com/4t145/bilive-danmaku"
+branch = "master"
+
+features = ["json", "bincode"]

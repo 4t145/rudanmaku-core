@@ -1,0 +1,12 @@
+[net]
+port = 10200
+ipv4 = [0,0,0,0]
+
+[[room]]
+roomid = 23840076
+channel = ["json"]
+
+[[room]]
+roomid = 5229
+channel = ["json"]
+
