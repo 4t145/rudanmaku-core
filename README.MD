@@ -18,11 +18,11 @@ ipv6 = [0,0,0,0,0,0,0,0]
 # 房间id长短都可以
 roomid = 23840076
 # channel 目前支持json|bincode
-channel = ["json, bincode"]
+channel = ["json", "bincode"]
 
 [[room]]
 roomid = 5229
-channel = ["json, bincode"]
+channel = ["json", "bincode"]
 ```
 
 
