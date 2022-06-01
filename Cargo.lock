@@ -3,12 +3,6 @@
 version = 3
 
 [[package]]
-name = "adler32"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aae1277d39aeec15cb388266ecc24b11c80469deae6067e17a1a7aa9e5c1f234"
-
-[[package]]
 name = "alloc-no-stdlib"
 version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -37,12 +31,11 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
 name = "bilive-danmaku"
-version = "0.0.1-wip"
-source = "git+https://github.com/4t145/bilive-danmaku?branch=master#b6a5715eef98361da4daa55eeefb8c01b8dc6025"
+version = "0.1.0"
+source = "git+https://github.com/4t145/bilive-danmaku?branch=ver-0.1.0#cf179518d942ef005e8357b3ccf53a3e8366d9bc"
 dependencies = [
  "bincode",
  "brotli",
- "deflate",
  "futures-util",
  "reqwest",
  "serde",
@@ -159,15 +152,6 @@ checksum = "57952ca27b5e3606ff4dd79b0020231aaf9d6aa76dc05fd30137538c50bd3ce8"
 dependencies = [
  "generic-array",
  "typenum",
-]
-
-[[package]]
-name = "deflate"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c86f7e25f518f4b81808a2cf1c50996a61f5c2eb394b2393bd87f2a4780a432f"
-dependencies = [
- "adler32",
 ]
 
 [[package]]

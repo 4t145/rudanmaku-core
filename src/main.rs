@@ -42,7 +42,7 @@ fn parse_args() -> config::Config {
                                 panic!("port should be a number of u64");
                             }
                         } else {
-                            12000
+                            10200
                         };
                         let config = config::Config {
                             net: NetConfig {

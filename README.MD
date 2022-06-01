@@ -39,4 +39,19 @@ channel = ["json", "bincode"]
 ## 关于bincode
 bincode是二进制编码的数据结构，如果你对接此服务的应用是用rust编写的，bincode可能可以给你提供更高的正反序列化效率
 
-关于bincode请参见[此仓库](https://github.com/bincode-org/bincode)
+对接端可以用本项目的依赖库`bilive-danmaku`，并启用`event`和`bincode`
+```toml
+[dependencies]
+bilive-danmaku = {git = "https://github.com/4t145/bilive-danmaku", branch = "ver-0.1.0"， features = ["event", "bincode"]}
+```
+bincode详情请参见[此仓库](https://github.com/bincode-org/bincode)
+
+## 自行编译可能遇到的问题
+### 我从未使用过rust？
+1. 根据官网指导安装rust工具链https://www.rust-lang.org/zh-CN
+2. 安装`nightly`版本工具链: `rustup toolchain install nightly`
+3. 在本文件夹内切换到nightly版本: `rustup override set nightly`
+4. 编译发行版 `cargo build --release`
+5. 编译完的可运行程序在`/target/release`中
+### linux上NativeTLS相关？
+我的评价是，直接google报错内容！
