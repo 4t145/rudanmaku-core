@@ -33,6 +33,25 @@ channel = ["json", "bincode"]
 ## json
 示例如下
 ![json示例](./.readme/example.png)
+## JavaScript/TypeScript 支持
+```bash
+npm install bilive-danmaku-json@0.1.0-rc4
+```
+### 使用例
+```TypeScript
+import {Event, DanmakuEvent} from 'bilive-danmaku-json';
+function on_danmaku(data: DanmakuEvent['data']) {
+    if(data.junk_flag===0) {
+        console.log(data.message);
+    }
+    // ...
+}
+// ... 获取data
+const evt = JSON.parse(data);
+if(evt.tag === 'Danmaku') {
+    on_danmaku(evt.data);
+}
+```
 ## 事件类型
 参见[这个仓库](https://github.com/4t145/bilive-danmaku)
 
