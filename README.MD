@@ -1,5 +1,7 @@
 # rudanmaku-core
 提供批量对bilibili直播间的监控服务
+
+gui： https://github.com/4t145/rudanmaku-shell
 # 启动
 - 使用配置启动： `rudanmaku-core config <config-path>`
 - 单房间在localhost启动 `rudanmaku-core <roomid> <port?=10200>`
