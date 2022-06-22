@@ -8,6 +8,7 @@ use crate::pipe::PipeType;
 pub struct Chan {
     pub json: bool,
     pub bincode: bool,
+    pub mongo: Option<mongodb::Collection<bilive_danmaku::event::Event>>,
     pub roomid: u64
 }
 
@@ -55,6 +56,21 @@ impl Chan {
             None
         };
 
+        let mongo = self.mongo;
+        let mongo_clone = mongo.clone();
+        let mut mongo_handle = if let Some(mongo_collection) = mongo {
+            let mut inbound = service.subscribe();
+            Some(tokio::spawn(async move {
+                while let Ok(evt) = inbound.recv().await {
+                    if let Err(e) = mongo_collection.insert_one(evt, None).await {
+                        println!("{}", e);
+                    }
+                }
+            }))
+        } else {
+            None
+        };
+
         let guard = async move {
             while let Some(_exception) = service.exception().await {
                 let mut fallback = service.close();
@@ -75,6 +91,18 @@ impl Chan {
                                 let inbound = service.subscribe();
                                 let handle = tokio::spawn(Pipe{inbound,outbound:outbound.clone()}.piping(config));
                                 bincode_handle = Some((handle, outbound))
+                            }
+                            if let Some(handle) = mongo_handle {
+                                handle.abort();
+                                let mongo_collection = mongo_clone.clone().unwrap();
+                                let mut inbound = service.subscribe();
+                                mongo_handle = Some(tokio::spawn(async move {
+                                    while let Ok(evt) = inbound.recv().await {
+                                        if let Err(e) = mongo_collection.insert_one(evt, None).await {
+                                            println!("{}", e);
+                                        }
+                                    }
+                                }));
                             }
                             break 'retry;
                         },
@@ -107,7 +135,7 @@ impl ChanOutbound {
             },
             PipeType::Bincode => {
                 self.bincode_outbound.as_ref().map(|h|h.subscribe())
-            },
+            }
         }
     }
 }

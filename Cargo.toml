@@ -1,6 +1,6 @@
 [package]
 name = "rudanmaku"
-author = "4t145"
+authors = ["4t145"]
 version = "0.1.0"
 edition = "2021"
 
@@ -27,6 +27,10 @@ features = ["full"]
 [dependencies.bilive-danmaku]
 
 git = "https://github.com/4t145/bilive-danmaku"
-branch = "ver-0.1.0"
+branch = "master"
 
 features = ["json", "bincode"]
+
+[dependencies.mongodb]
+version = "2.2.2"
+features = ["tokio-runtime"]

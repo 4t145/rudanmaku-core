@@ -9,7 +9,7 @@ mod pipe;
 mod chan;
 mod config;
 use pipe::PipeType;
-use config::{NetConfig, RoomConfigItem};
+use config::{NetConfig, RoomConfigItem, DbConfig};
 
 
 fn parse_args() -> config::Config {
@@ -54,6 +54,7 @@ fn parse_args() -> config::Config {
                                 roomid,
                                 channel: vec![String::from("json"), String::from("bincode")]
                             }],
+                            db: DbConfig { mongo: None }
                         };
                         return config;
                     } else {
@@ -65,6 +66,7 @@ fn parse_args() -> config::Config {
         None => panic!("roomid should be a number of u64"),
     }
 }
+
 #[tokio::main]
 async fn main() {
     // let rt = tokio::runtime::Builder::new_multi_thread().enable_all()
@@ -73,13 +75,19 @@ async fn main() {
     server(config).await;
 }
 
-async fn batch_init(configs: Vec<config::RoomConfigItem>, cooldown: Duration) -> Arc<RwLock<HashMap<u64, chan::ChanOutbound>>> {
+async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Duration) -> Arc<RwLock<HashMap<u64, chan::ChanOutbound>>> {
     let mut map = HashMap::new();
     for room_config in configs {
         let roomid = room_config.roomid;
+        let collection = dbs.mongo.as_ref().map(|db|{
+            
+            db.collection::<bilive_danmaku::event::Event>(roomid.to_string().as_str())
+        });
+        
         let chan = chan::Chan {
             json: room_config.channel.contains(&"json".to_owned()),
             bincode: room_config.channel.contains(&"bincode".to_owned()),
+            mongo: collection,
             roomid,
         };
         if let Ok(handle) = chan.start().await {
@@ -105,6 +113,10 @@ async fn wait_close(mut rx:SplitStream<WebSocketStream<TcpStream>>, handle: toki
     } 
 }
 
+pub struct Dbs {
+    mongo: Option<mongodb::Database>
+}
+
 async fn server(config: config::Config) {
     let port = config.net.port;
     let server_addr = if let Some(ipv4) = config.net.ipv4 {
@@ -114,7 +126,27 @@ async fn server(config: config::Config) {
     } else {
         IpAddr::V4(Ipv4Addr::UNSPECIFIED)
     };
-    let service_list = batch_init(config.room, Duration::from_micros(500)).await;
+    let mongo = 
+    if let Some(mongo_config) = config.db.mongo {
+
+        use  mongodb::options::*;
+        println!("db connecting ");
+        let host = mongo_config.host;
+        let port = Some(mongo_config.port);
+        let options = ClientOptions::builder().hosts(vec![ServerAddress::Tcp{host, port}]).build();
+        if let Ok(client) = mongodb::Client::with_options(options) {
+            println!("db connected");
+            Some(client.database(mongo_config.db.as_str()))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    let dbs = Dbs {
+        mongo,
+    };
+    let service_list = batch_init(config.room, dbs, Duration::from_micros(500)).await;
     let socket_server = SocketAddr::new(server_addr, port);
     let tcp = tokio::net::TcpListener::bind(socket_server).await.unwrap();
     while let Ok((stream, _peer_addr)) = tcp.accept().await {

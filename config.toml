@@ -2,8 +2,15 @@
 port = 10200
 ipv4 = [0,0,0,0]
 
+
+[db.mongo]
+db = "virtuareal"
+host = "localhost"
+port = 27017
+
+
 [[room]]
-roomid = 23840076
+roomid = 23260932
 channel = ["json"]
 
 [[room]]

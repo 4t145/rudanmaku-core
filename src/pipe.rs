@@ -8,7 +8,7 @@ pub struct Pipe {
 #[derive(Clone, Debug)]
 pub enum PipeType {
     Json,
-    Bincode
+    Bincode,
 }
 pub struct PipeConfig {
     pub pipe_type: PipeType
@@ -23,9 +23,9 @@ impl Pipe {
                 },
                 PipeType::Bincode => {
                     evt.to_bincode().map(|bincode|WsMsg::Binary(bincode)).map_err(|_|"bincode encode error")
-                },
+                }
             };
-            if let Ok(msg) = msg {
+            if let Ok(msg) = msg {  
                 self.outbound.send(msg).unwrap_or_default();
             }
         }
