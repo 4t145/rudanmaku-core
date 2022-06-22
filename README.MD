@@ -1,5 +1,7 @@
 # rudanmaku-core
 提供批量对bilibili直播间的监控服务
+
+gui： https://github.com/4t145/rudanmaku-shell
 # 启动
 - 使用配置启动： `rudanmaku-core config <config-path>`
 - 单房间在localhost启动 `rudanmaku-core <roomid> <port?=10200>`
@@ -65,12 +67,12 @@ bilive-danmaku = {git = "https://github.com/4t145/bilive-danmaku", branch = "ver
 ```
 bincode详情请参见[此仓库](https://github.com/bincode-org/bincode)
 
-## 自行编译可能遇到的问题
-### 我从未使用过rust？
+# 自行编译可能遇到的问题
+## 我从未使用过rust？
 1. 根据官网指导安装rust工具链https://www.rust-lang.org/zh-CN
 2. 安装`nightly`版本工具链: `rustup toolchain install nightly`
 3. 在本文件夹内切换到nightly版本: `rustup override set nightly`
 4. 编译发行版 `cargo build --release`
 5. 编译完的可运行程序在`/target/release`中
-### linux上NativeTLS相关？
+## linux上NativeTLS相关？
 我的评价是，直接google报错内容！
