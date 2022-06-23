@@ -77,6 +77,8 @@ async fn main() {
 
 async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Duration) -> Arc<RwLock<HashMap<u64, chan::ChanOutbound>>> {
     let mut map = HashMap::new();
+    let total = configs.len();
+    let mut counter = 0;
     for room_config in configs {
         let roomid = room_config.roomid;
         let collection = dbs.mongo.as_ref().map(|db|{
@@ -93,6 +95,8 @@ async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Du
         if let Ok(handle) = chan.start().await {
             map.insert(roomid, handle);
         }
+        counter += 1;
+        println!("init {counter}/{total}");
         tokio::time::sleep(cooldown).await;
     }
     Arc::new(RwLock::new(map))

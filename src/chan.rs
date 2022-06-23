@@ -86,11 +86,12 @@ impl Chan {
         let guard = async move {
             while let Some(_exception) = service.exception().await {
                 println!("{:?}", _exception);
-                println!("reconnecting");
+                println!("room[{roomid}]: reconnecting");
                 let mut fallback = service.close();
                 'retry: loop {
                     match fallback.connect().await {
                         Ok(new_service) => {
+                            println!("room[{roomid}]: reconnected");
                             service = new_service;
                             if let Some((handle, outbound)) = json_handle {
                                 handle.abort();
