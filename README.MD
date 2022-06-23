@@ -25,6 +25,13 @@ channel = ["json", "bincode"]
 [[room]]
 roomid = 5229
 channel = ["json", "bincode"]
+
+# mongodb 作为数据库
+[db.mongo]
+# 数据库名称
+db = "virtuareal"
+host = "localhost"
+port = 27017
 ```
 
 

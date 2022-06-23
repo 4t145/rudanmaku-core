@@ -81,7 +81,7 @@ async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Du
         let roomid = room_config.roomid;
         let collection = dbs.mongo.as_ref().map(|db|{
             
-            db.collection::<bilive_danmaku::event::Event>(roomid.to_string().as_str())
+            db.collection::<chan::ExtendedEvent>(roomid.to_string().as_str())
         });
         
         let chan = chan::Chan {

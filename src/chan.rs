@@ -1,17 +1,24 @@
-
-
-use bilive_danmaku::{RoomService};
+use bilive_danmaku::{RoomService, event::Event};
+use mongodb::bson::doc;
 use tokio_tungstenite::tungstenite::Message as WsMsg;
 use tokio::sync::broadcast;
 
 use crate::pipe::PipeType;
+
+#[derive(serde::Serialize)]
+pub struct ExtendedEvent {
+    #[serde(flatten)]
+    event: Event,
+    // #[serde(with = "u32_as_timestamp")]
+    timestamp: i64
+}
+
 pub struct Chan {
     pub json: bool,
     pub bincode: bool,
-    pub mongo: Option<mongodb::Collection<bilive_danmaku::event::Event>>,
+    pub mongo: Option<mongodb::Collection<ExtendedEvent>>,
     pub roomid: u64
 }
-
 
 
 impl Chan {
@@ -62,7 +69,12 @@ impl Chan {
             let mut inbound = service.subscribe();
             Some(tokio::spawn(async move {
                 while let Ok(evt) = inbound.recv().await {
-                    if let Err(e) = mongo_collection.insert_one(evt, None).await {
+                    let ex_event = ExtendedEvent {
+                        event: evt,
+                        timestamp: chrono::Utc::now().timestamp_millis()
+                    };
+
+                    if let Err(e) = mongo_collection.insert_one(ex_event, None).await {
                         println!("{}", e);
                     }
                 }
@@ -73,6 +85,8 @@ impl Chan {
 
         let guard = async move {
             while let Some(_exception) = service.exception().await {
+                println!("{:?}", _exception);
+                println!("reconnecting");
                 let mut fallback = service.close();
                 'retry: loop {
                     match fallback.connect().await {
@@ -98,7 +112,11 @@ impl Chan {
                                 let mut inbound = service.subscribe();
                                 mongo_handle = Some(tokio::spawn(async move {
                                     while let Ok(evt) = inbound.recv().await {
-                                        if let Err(e) = mongo_collection.insert_one(evt, None).await {
+                                        let ex_event = ExtendedEvent {
+                                            event: evt,
+                                            timestamp: chrono::Utc::now().timestamp_millis()
+                                        };
+                                        if let Err(e) = mongo_collection.insert_one(ex_event, None).await {
                                             println!("{}", e);
                                         }
                                     }
