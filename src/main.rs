@@ -75,7 +75,7 @@ async fn main() {
     server(config).await;
 }
 
-async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Duration) -> Arc<RwLock<HashMap<u64, chan::ChanOutbound>>> {
+async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Duration) -> Arc<RwLock<HashMap<u64, chan::ChanHandle>>> {
     let mut map = HashMap::new();
     let total = configs.len();
     let mut counter = 0;
@@ -162,7 +162,7 @@ async fn server(config: config::Config) {
             Ok(ws_stream) => {
                 if let Ok(param) = connect_param_rx.await {
                     if let Some(chan) = service_list.read().await.get(&param.roomid) {
-                        if let Some(inbound) = chan.subscribe(param.connect_type) {
+                        if let Some(inbound) = chan.ws_subscribe(param.connect_type) {
                             let (outbound, rx) = ws_stream.split();
                             tokio::spawn(
                                 wait_close(rx, 

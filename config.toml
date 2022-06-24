@@ -10,7 +10,7 @@ port = 27017
 
 
 [[room]]
-roomid = 23805066
+roomid = 21457197
 channel = ["json", "bincode"]
 
 [[room]]

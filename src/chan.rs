@@ -3,14 +3,14 @@ use mongodb::bson::doc;
 use tokio_tungstenite::tungstenite::Message as WsMsg;
 use tokio::sync::broadcast;
 
-use crate::pipe::PipeType;
-
+use crate::pipe::{PipeType, Outbound};
+const MAX_RETRY_CNT:u64 = 10;
 #[derive(serde::Serialize)]
 pub struct ExtendedEvent {
     #[serde(flatten)]
-    event: Event,
+    pub event: Event,
     // #[serde(with = "u32_as_timestamp")]
-    timestamp: i64
+    pub timestamp: i64
 }
 
 pub struct Chan {
@@ -22,112 +22,51 @@ pub struct Chan {
 
 
 impl Chan {
-    pub async fn start(self) -> Result<ChanOutbound, String> {
+    pub async fn start(self) -> Result<ChanHandle, String> {
         use crate::pipe::*;
         let roomid = self.roomid;
 
-        let mut service = match RoomService::new(roomid).init().await {
-            Ok(service) => {
-                service.connect().await.map_err(|_|"fail to connect")
-            },
-            Err(_) => {
-                Err("fail to init")
-            },
-        }?;
+        let fallback = RoomService::new(roomid).init().await.map_err(|_|"fail to init")?;
+        let mut service = fallback.connect().await.map_err(|_|"fail to connect")?;
 
-        
-        let mut chan_outbound = ChanOutbound {
-            json_outbound:None,
-            bincode_outbound:None,
+
+        let json = self.json.then_some(broadcast::channel(16).0);
+        let bincode = self.bincode.then_some(broadcast::channel(16).0);
+
+        let inbound = service.subscribe();
+        let outbound = Outbound {
+            ws: WsOutbound { json, bincode },
+            db: DbOutbound { mongo: self.mongo }
         };
-
-        let mut json_handle = if self.json {
-            let config = PipeConfig{pipe_type: PipeType::Json};
-            let inbound = service.subscribe();
-            let (outbound, _) = tokio::sync::broadcast::channel(16);
-            let json_handle = tokio::spawn(Pipe{inbound,outbound:outbound.clone()}.piping(config));
-            chan_outbound.json_outbound = Some(outbound.clone());
-            Some((json_handle, outbound))
-        } else {
-            None
-        };
-
-        let mut bincode_handle = if self.bincode {
-            let config = PipeConfig{pipe_type: PipeType::Bincode};
-            let inbound = service.subscribe();
-            let (outbound, _) = tokio::sync::broadcast::channel(16);
-            let bincode_handle = tokio::spawn(Pipe{inbound,outbound:outbound.clone()}.piping(config));
-            chan_outbound.bincode_outbound = Some(outbound.clone());
-            Some((bincode_handle, outbound))
-        } else {
-            None
-        };
-
-        let mongo = self.mongo;
-        let mongo_clone = mongo.clone();
-        let mut mongo_handle = if let Some(mongo_collection) = mongo {
-            let mut inbound = service.subscribe();
-            Some(tokio::spawn(async move {
-                while let Ok(evt) = inbound.recv().await {
-                    let ex_event = ExtendedEvent {
-                        event: evt,
-                        timestamp: chrono::Utc::now().timestamp_millis()
-                    };
-
-                    if let Err(e) = mongo_collection.insert_one(ex_event, None).await {
-                        println!("{}", e);
-                    }
-                }
-            }))
-        } else {
-            None
-        };
+        let ret = Ok(ChanHandle{outbound: outbound.clone()});
+        let mut handle = tokio::spawn(piping(inbound, outbound.clone()));
 
         let guard = async move {
             while let Some(_exception) = service.exception().await {
                 println!("{:?}", _exception);
+                service.close();
+                println!("room[{roomid}]: service close");
+                handle.abort();
+                println!("room[{roomid}]: pipe abort");
+
                 println!("room[{roomid}]: reconnecting");
-                let mut fallback = service.close();
                 'retry: loop {
+                    let mut retry_cnt = 0;
                     match fallback.connect().await {
                         Ok(new_service) => {
                             println!("room[{roomid}]: reconnected");
                             service = new_service;
-                            if let Some((handle, outbound)) = json_handle {
-                                handle.abort();
-                                let config = PipeConfig{pipe_type: PipeType::Json};
-                                let inbound = service.subscribe();
-                                let handle = tokio::spawn(Pipe{inbound,outbound:outbound.clone()}.piping(config));
-                                json_handle = Some((handle, outbound))
-                            }
-                            if let Some((handle, outbound)) = bincode_handle {
-                                handle.abort();
-                                let config = PipeConfig{pipe_type: PipeType::Bincode};
-                                let inbound = service.subscribe();
-                                let handle = tokio::spawn(Pipe{inbound,outbound:outbound.clone()}.piping(config));
-                                bincode_handle = Some((handle, outbound))
-                            }
-                            if let Some(handle) = mongo_handle {
-                                handle.abort();
-                                let mongo_collection = mongo_clone.clone().unwrap();
-                                let mut inbound = service.subscribe();
-                                mongo_handle = Some(tokio::spawn(async move {
-                                    while let Ok(evt) = inbound.recv().await {
-                                        let ex_event = ExtendedEvent {
-                                            event: evt,
-                                            timestamp: chrono::Utc::now().timestamp_millis()
-                                        };
-                                        if let Err(e) = mongo_collection.insert_one(ex_event, None).await {
-                                            println!("{}", e);
-                                        }
-                                    }
-                                }));
-                            }
+                            let inbound = service.subscribe();
+                            handle = tokio::spawn(piping(inbound, outbound.clone()));
                             break 'retry;
                         },
-                        Err((new_fallback, _)) => {
-                            fallback = new_fallback;
-                            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                        Err(e) => {
+                            retry_cnt += 1;
+                            println!("room[{roomid}]: reconnect failed [{retry_cnt}], error: {e:?}");
+                            if retry_cnt >= MAX_RETRY_CNT {
+                                println!("room[{roomid}]: quit gurad");
+                            }
+                            tokio::time::sleep(tokio::time::Duration::from_secs(30*MAX_RETRY_CNT*(MAX_RETRY_CNT+1))).await;
                         },
                     }
                 }
@@ -136,24 +75,23 @@ impl Chan {
 
         tokio::spawn(guard);
         
-        Ok(chan_outbound)
+        ret
     }
 }
 
 
-pub struct ChanOutbound {
-    json_outbound: Option<broadcast::Sender<WsMsg>>,
-    bincode_outbound: Option<broadcast::Sender<WsMsg>>,
+pub struct ChanHandle {
+    outbound: Outbound
 }
 
-impl ChanOutbound {
-    pub fn subscribe(&self, ptype: PipeType) -> Option<broadcast::Receiver<WsMsg>> {
+impl ChanHandle {
+    pub fn ws_subscribe(&self, ptype: PipeType) -> Option<broadcast::Receiver<WsMsg>> {
         match ptype {
             PipeType::Json => {
-                self.json_outbound.as_ref().map(|h|h.subscribe())
+                self.outbound.ws.json.as_ref().map(|h|h.subscribe())
             },
             PipeType::Bincode => {
-                self.bincode_outbound.as_ref().map(|h|h.subscribe())
+                self.outbound.ws.bincode.as_ref().map(|h|h.subscribe())
             }
         }
     }
