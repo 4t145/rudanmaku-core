@@ -3,6 +3,7 @@ use bilive_danmaku::event::Event as BiliEvent;
 use tokio_tungstenite::tungstenite::Message as WsMsg;
 
 use crate::chan::ExtendedEvent;
+use log::{error};
 
 #[derive(Clone)]
 pub struct Outbound {
@@ -45,7 +46,7 @@ pub async fn piping(mut inbound: broadcast::Receiver<BiliEvent>, outbound: Outbo
                 timestamp: chrono::Utc::now().timestamp_millis()
             };
             if let Err(e) = mongo.insert_one(ex_event, None).await {
-                println!("db error {}", e);
+                error!("db error {}", e);
             }
         }
     }

@@ -10,7 +10,7 @@ mod chan;
 mod config;
 use pipe::PipeType;
 use config::{NetConfig, RoomConfigItem, DbConfig};
-
+use log::{info, warn, error};
 
 fn parse_args() -> config::Config {
     let mut args = std::env::args().skip(1);
@@ -25,7 +25,7 @@ fn parse_args() -> config::Config {
                                 toml::from_slice::<config::Config>(&file).unwrap()
                             },
                             Err(e) => {
-                                println!("{}", e);
+                                error!("{}", e);
                                 panic!("fail read config file")
                             },
                         }
@@ -69,6 +69,7 @@ fn parse_args() -> config::Config {
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     // let rt = tokio::runtime::Builder::new_multi_thread().enable_all()
     // .build().unwrap();
     let config = parse_args();
@@ -81,8 +82,9 @@ async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Du
     let mut counter = 0;
     for room_config in configs {
         let roomid = room_config.roomid;
+        info!("connecting room[{roomid}]");
+
         let collection = dbs.mongo.as_ref().map(|db|{
-            
             db.collection::<chan::ExtendedEvent>(roomid.to_string().as_str())
         });
         
@@ -92,19 +94,40 @@ async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Du
             mongo: collection,
             roomid,
         };
-        if let Ok(handle) = chan.start().await {
-            map.insert(roomid, handle);
+        match chan.start().await {
+            Ok(handle) => {
+                map.insert(roomid, handle);
+                counter += 1;
+                info!("connected room[{roomid}]: {counter}/{total}");
+            },
+            Err(e) => {
+                error!("fail to connect room[{roomid}] {e}");
+            }
         }
-        counter += 1;
-        println!("init {counter}/{total}");
         tokio::time::sleep(cooldown).await;
     }
     Arc::new(RwLock::new(map))
 }
 
 async fn bridge(mut inbound: broadcast::Receiver<ws2::Message>, mut outbound: SplitSink<WebSocketStream<TcpStream>, ws2::Message>) {
-    while let Ok(msg) = inbound.recv().await {
-        outbound.send(msg).await.unwrap_or_default();
+    loop {
+        match inbound.recv().await {
+            Ok(msg) => {
+                outbound.send(msg).await.unwrap_or_default();
+            },
+            Err(e) => {
+                warn!("bridge encounter error: {e}");
+                match e {
+                    broadcast::error::RecvError::Closed => {
+                        warn!("{e}");
+                        break;
+                    },
+                    broadcast::error::RecvError::Lagged(n) => {
+                        warn!("skipped {n}");
+                    },
+                }
+            }
+        }
     }
 }
 
@@ -132,17 +155,20 @@ async fn server(config: config::Config) {
     };
     let mongo = 
     if let Some(mongo_config) = config.db.mongo {
-
         use  mongodb::options::*;
-        println!("db connecting ");
+        info!("db connecting");
         let host = mongo_config.host;
         let port = Some(mongo_config.port);
         let options = ClientOptions::builder().hosts(vec![ServerAddress::Tcp{host, port}]).build();
-        if let Ok(client) = mongodb::Client::with_options(options) {
-            println!("db connected");
-            Some(client.database(mongo_config.db.as_str()))
-        } else {
-            None
+        match mongodb::Client::with_options(options) {
+            Ok(client) => {
+                info!("db connected");
+                Some(client.database(mongo_config.db.as_str()))
+            },
+            Err(e) => {
+                error!("cannot connect to db: {e}");
+                None
+            }
         }
     } else {
         None
@@ -150,6 +176,8 @@ async fn server(config: config::Config) {
     let dbs = Dbs {
         mongo,
     };
+    info!("init wss connection...");
+
     let service_list = batch_init(config.room, dbs, Duration::from_micros(500)).await;
     let socket_server = SocketAddr::new(server_addr, port);
     let tcp = tokio::net::TcpListener::bind(socket_server).await.unwrap();

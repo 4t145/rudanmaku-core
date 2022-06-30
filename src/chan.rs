@@ -2,6 +2,7 @@ use bilive_danmaku::{RoomService, event::Event};
 use mongodb::bson::doc;
 use tokio_tungstenite::tungstenite::Message as WsMsg;
 use tokio::sync::broadcast;
+use log::{info, warn, error};
 
 use crate::pipe::{PipeType, Outbound};
 const MAX_RETRY_CNT:u64 = 10;
@@ -29,7 +30,6 @@ impl Chan {
         let fallback = RoomService::new(roomid).init().await.map_err(|_|"fail to init")?;
         let mut service = fallback.connect().await.map_err(|_|"fail to connect")?;
 
-
         let json = self.json.then_some(broadcast::channel(16).0);
         let bincode = self.bincode.then_some(broadcast::channel(16).0);
 
@@ -43,18 +43,15 @@ impl Chan {
 
         let guard = async move {
             while let Some(_exception) = service.exception().await {
-                println!("{:?}", _exception);
+                warn!("room[{roomid}]: exception {:?}", _exception);
                 service.close();
-                println!("room[{roomid}]: service close");
                 handle.abort();
-                println!("room[{roomid}]: pipe abort");
-
-                println!("room[{roomid}]: reconnecting");
+                warn!("room[{roomid}]: service closed, reconnecting");
                 'retry: loop {
                     let mut retry_cnt = 0;
                     match fallback.connect().await {
                         Ok(new_service) => {
-                            println!("room[{roomid}]: reconnected");
+                            info!("room[{roomid}]: reconnected");
                             service = new_service;
                             let inbound = service.subscribe();
                             handle = tokio::spawn(piping(inbound, outbound.clone()));
@@ -62,11 +59,11 @@ impl Chan {
                         },
                         Err(e) => {
                             retry_cnt += 1;
-                            println!("room[{roomid}]: reconnect failed [{retry_cnt}], error: {e:?}");
+                            error!("room[{roomid}]: reconnect failed [{retry_cnt}], error: {e:?}");
                             if retry_cnt >= MAX_RETRY_CNT {
-                                println!("room[{roomid}]: quit gurad");
+                                error!("room[{roomid}]: quit gurad");
                             }
-                            tokio::time::sleep(tokio::time::Duration::from_secs(30*MAX_RETRY_CNT*(MAX_RETRY_CNT+1))).await;
+                            tokio::time::sleep(tokio::time::Duration::from_secs(5*MAX_RETRY_CNT*MAX_RETRY_CNT)).await;
                         },
                     }
                 }
