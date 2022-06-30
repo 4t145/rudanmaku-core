@@ -35,7 +35,7 @@ pub async fn piping(mut inbound: broadcast::Receiver<BiliEvent>, outbound: Outbo
                 bincode.send(msg).unwrap_or_default();
             }
         }
-        if let Some(json) = &outbound.ws.bincode {
+        if let Some(json) = &outbound.ws.json {
             if let Ok(msg) = evt.to_json().map(|json|WsMsg::Text(json)) {
                 json.send(msg).unwrap_or_default();
             }
