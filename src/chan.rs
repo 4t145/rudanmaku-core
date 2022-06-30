@@ -42,8 +42,17 @@ impl Chan {
         let mut handle = tokio::spawn(piping(inbound, outbound.clone()));
 
         let guard = async move {
-            while let Some(_exception) = service.exception().await {
-                warn!("room[{roomid}]: exception {:?}", _exception);
+            while let Some(exception) = service.exception().await {
+                use bilive_danmaku::Exception::*;
+                warn!("room[{roomid}]: exception {:?}", exception);
+                match exception {
+                    WsSendError(_)|UnexpectedMessage(_) => {
+                        continue;
+                    },
+                    _ => {
+                        // should restart!
+                    }
+                }
                 service.close();
                 handle.abort();
                 warn!("room[{roomid}]: service closed, reconnecting");
