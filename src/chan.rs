@@ -6,6 +6,7 @@ use log::{info, warn, error};
 
 use crate::pipe::{PipeType, Outbound};
 const MAX_RETRY_CNT:u64 = 10;
+const MAX_UNSEND_HB:u8 = 3;
 #[derive(serde::Serialize)]
 pub struct ExtendedEvent {
     #[serde(flatten)]
@@ -42,12 +43,19 @@ impl Chan {
         let mut handle = tokio::spawn(piping(inbound, outbound.clone()));
 
         let guard = async move {
+            let mut send_error_cnt = 0;
             while let Some(exception) = service.exception().await {
                 use bilive_danmaku::Exception::*;
                 warn!("room[{roomid}]: exception {:?}", exception);
                 match exception {
-                    WsSendError(_)|UnexpectedMessage(_) => {
+                    UnexpectedMessage(_) => {
                         continue;
+                    }
+                    WsSendError(_) => {
+                        send_error_cnt += 1;
+                        if send_error_cnt < MAX_UNSEND_HB {
+                            continue;
+                        } 
                     },
                     _ => {
                         // should restart!
