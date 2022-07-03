@@ -1,85 +1,34 @@
-use std::{net::{Ipv4Addr, Ipv6Addr, IpAddr, SocketAddr}, time::Duration, path::Path};
+use std::{
+    net::{Ipv4Addr, Ipv6Addr, IpAddr, SocketAddr}, 
+    time::Duration,
+    sync::Arc,
+    collections::HashMap,
+};
 use tokio_tungstenite::{tungstenite::{self as ws2, handshake::server::Callback}, WebSocketStream};
 use futures_util::{SinkExt, StreamExt, stream::SplitSink, stream::SplitStream};
-
-use std::collections::HashMap;
 use tokio::{sync::{broadcast, oneshot, RwLock}, net::TcpStream};
-use std::sync::Arc;
+use log::{info, warn, error};
+
 mod pipe;
 mod chan;
 mod config;
-use pipe::PipeType;
-use config::{NetConfig, RoomConfigItem, DbConfig};
-use log::{info, warn, error};
+mod netcontrol;
 
-fn parse_args() -> config::Config {
-    let mut args = std::env::args().skip(1);
-    match args.next() {
-        Some(first_arg) => {
-            match first_arg.as_str() {
-                "config" => {
-                    if let Some(configfile) = args.next() {
-                        use std::fs::*;
-                        match read(Path::new(&configfile)) {
-                            Ok(file) => {
-                                toml::from_slice::<config::Config>(&file).unwrap()
-                            },
-                            Err(e) => {
-                                error!("{}", e);
-                                panic!("fail read config file")
-                            },
-                        }
-                    } else {
-                        panic!("missing arg: config file path")
-                    }
-                },
-                maybe_number @_ => {
-                    if let Ok(roomid) = u64::from_str_radix(maybe_number, 10) {
-                        let port = if let Some(port) = args.next() {
-                            if let Ok(port) = u16::from_str_radix(port.as_str(), 10) {
-                                port
-                            } else {
-                                panic!("port should be a number of u64");
-                            }
-                        } else {
-                            10200
-                        };
-                        let config = config::Config {
-                            net: NetConfig {
-                                ipv4: Some([127,0,0,1]),
-                                ipv6: None,
-                                port,
-                            },
-                            room: vec![RoomConfigItem {
-                                roomid,
-                                channel: vec![String::from("json"), String::from("bincode")]
-                            }],
-                            db: DbConfig { mongo: None }
-                        };
-                        return config;
-                    } else {
-                        panic!("roomid should be a number of u64")
-                    }
-                }
-            }
-        },
-        None => panic!("roomid should be a number of u64"),
-    }
-}
+use pipe::PipeType;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
     // let rt = tokio::runtime::Builder::new_multi_thread().enable_all()
     // .build().unwrap();
-    let config = parse_args();
-    server(config).await;
+    server(config::get_config()).await;
 }
 
 async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Duration) -> Arc<RwLock<HashMap<u64, chan::ChanHandle>>> {
     let mut map = HashMap::new();
     let total = configs.len();
     let mut counter = 0;
+    let cooldown = netcontrol::Cooldown::new(cooldown);
     for room_config in configs {
         let roomid = room_config.roomid;
         info!("connecting room[{roomid}]");
@@ -93,7 +42,9 @@ async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Du
             bincode: room_config.channel.contains(&"bincode".to_owned()),
             mongo: collection,
             roomid,
+            cooldown:cooldown.clone(),
         };
+        
         match chan.start().await {
             Ok(handle) => {
                 map.insert(roomid, handle);
@@ -104,7 +55,7 @@ async fn batch_init(configs: Vec<config::RoomConfigItem>, dbs: Dbs, cooldown: Du
                 error!("fail to connect room[{roomid}] {e}");
             }
         }
-        tokio::time::sleep(cooldown).await;
+        // tokio::time::sleep(cooldown).await;
     }
     Arc::new(RwLock::new(map))
 }

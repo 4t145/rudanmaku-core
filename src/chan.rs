@@ -19,7 +19,8 @@ pub struct Chan {
     pub json: bool,
     pub bincode: bool,
     pub mongo: Option<mongodb::Collection<ExtendedEvent>>,
-    pub roomid: u64
+    pub roomid: u64,
+    pub cooldown: crate::netcontrol::Cooldown
 }
 
 
@@ -41,7 +42,7 @@ impl Chan {
         };
         let ret = Ok(ChanHandle{outbound: outbound.clone()});
         let mut handle = tokio::spawn(piping(inbound, outbound.clone()));
-
+        let cooldown = self.cooldown.clone();
         let guard = async move {
             let mut send_error_cnt = 0;
             while let Some(exception) = service.exception().await {
@@ -80,7 +81,8 @@ impl Chan {
                             if retry_cnt >= MAX_RETRY_CNT {
                                 error!("room[{roomid}]: quit gurad");
                             }
-                            tokio::time::sleep(tokio::time::Duration::from_secs(5*MAX_RETRY_CNT*MAX_RETRY_CNT)).await;
+                            cooldown.cooldown().await;
+                            // tokio::time::sleep(tokio::time::Duration::from_secs(5*MAX_RETRY_CNT*MAX_RETRY_CNT)).await;
                         },
                     }
                 }
@@ -88,7 +90,7 @@ impl Chan {
         };
 
         tokio::spawn(guard);
-        
+        self.cooldown.cooldown().await;
         ret
     }
 }
