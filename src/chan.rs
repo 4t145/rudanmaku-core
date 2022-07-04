@@ -73,6 +73,7 @@ impl Chan {
                             service = new_service;
                             let inbound = service.subscribe();
                             handle = tokio::spawn(piping(inbound, outbound.clone()));
+                            cooldown.cooldown().await;
                             break 'retry;
                         },
                         Err(e) => {
