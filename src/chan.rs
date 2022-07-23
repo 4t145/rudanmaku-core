@@ -47,7 +47,7 @@ impl Chan {
             let mut send_error_cnt = 0;
             while let Some(exception) = service.exception().await {
                 use bilive_danmaku::Exception::*;
-                warn!("room[{roomid}]: exception {:?}", exception);
+                warn!("room[{roomid}]: exception {exception:?}");
                 match exception {
                     UnexpectedMessage(_) => {
                         continue;

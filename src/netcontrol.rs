@@ -13,9 +13,12 @@ impl Cooldown {
     }
 
     pub async fn cooldown(&self) {
-        let mut next = self.next.lock().await;
-        sleep_until(*next).await;
-        *next = Instant::now() + self.cooldown
+        let next = {
+            let mut next = self.next.lock().await;
+            *next = Instant::now() + self.cooldown;
+            next.clone()
+        };
+        sleep_until(next).await;
     }
 }
 
