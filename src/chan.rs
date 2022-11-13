@@ -28,9 +28,35 @@ impl Chan {
     pub async fn start(self) -> Result<ChanHandle, String> {
         use crate::pipe::*;
         let roomid = self.roomid;
+        let cooldown = self.cooldown.clone();
 
-        let fallback = RoomService::new(roomid).init().await.map_err(|_|"fail to init")?;
-        let mut service = fallback.connect().await.map_err(|_|"fail to connect")?;
+        let mut connect_error_cnt = 0;
+        let (mut service, fallback) = loop {
+            let result = {
+                if let Ok(fallback) = RoomService::new(roomid).init().await {
+                    if let Ok(service) = fallback.connect().await {
+                        Ok((service, fallback))
+                    } else {
+                        Err("连接失败")
+                    }
+                } else {
+                    Err("初始化失败")
+                }
+            };
+            match result {
+                Ok(ok) => {
+                    break ok
+                },
+                Err(e) => {
+                    connect_error_cnt += 1;
+                    warn!("fail to start room [{roomid}]({connect_error_cnt}): {e}");
+                    if connect_error_cnt>= 10 {
+                        return Err(format!("fail to start room [{roomid}]"))
+                    }
+                    cooldown.cooldown().await;
+                },
+            }
+        };
 
         let json = self.json.then_some(broadcast::channel(16).0);
         let bincode = self.bincode.then_some(broadcast::channel(16).0);
@@ -42,7 +68,6 @@ impl Chan {
         };
         let ret = Ok(ChanHandle{outbound: outbound.clone()});
         let mut handle = tokio::spawn(piping(inbound, outbound.clone()));
-        let cooldown = self.cooldown.clone();
         let guard = async move {
             let mut send_error_cnt = 0;
             while let Some(exception) = service.exception().await {

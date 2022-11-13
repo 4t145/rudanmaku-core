@@ -1,0 +1,145 @@
+
+[net]
+port = 10200
+ipv4 = [0,0,0,0]
+
+[db.mongo]
+db = "virtuareal"
+host = "localhost"
+port = 27017
+
+# 梦魇tsuki
+roomid = 851181
+channel = ["json", "bincode"]
+
+# 一期
+## 艾因
+[[room]]
+roomid = 21403601
+channel = ["json", "bincode"]
+
+# 二期
+## 七海
+[[room]]
+roomid = 21452505
+channel = ["json", "bincode"]
+
+## 光一
+[[room]]
+roomid = 21457197
+channel = ["json", "bincode"]
+
+# 三期
+## Muri
+[[room]]
+roomid = 21571739
+channel = ["json", "bincode"]
+
+# 四期
+## Waku
+[[room]]
+roomid = 21613356
+channel = ["json", "bincode"]
+
+## Nyatsuki
+[[room]]
+roomid = 21615277
+channel = ["json", "bincode"]
+
+## 有加
+[[room]]
+roomid = 21613353
+channel = ["json", "bincode"]
+
+# 五期
+## 蜜雪摩卡
+[[room]]
+roomid = 21672023
+channel = ["json", "bincode"]
+
+## 真飞鸟梦幻刃
+[[room]]
+roomid = 21672024
+channel = ["json", "bincode"]
+
+## 厦门黄晓明
+[[room]]
+roomid = 21672022
+channel = ["json", "bincode"]
+
+
+# 六期
+## AZA
+[[room]]
+roomid = 21696950
+channel = ["json", "bincode"]
+
+## BMDZ
+[[room]]
+roomid = 21696929
+channel = ["json", "bincode"]
+
+## 度人Tabibito
+[[room]]
+roomid = 21696957
+channel = ["json", "bincode"]
+
+## Roi
+[[room]]
+roomid = 21696953
+channel = ["json", "bincode"]
+
+# 七期
+## 沙夜
+[[room]]
+roomid = 21763344
+channel = ["json", "bincode"]
+
+## Yukie
+[[room]]
+roomid = 21756924
+channel = ["json", "bincode"]
+
+# 八期
+## 花留
+[[room]]
+roomid = 22111428
+channel = ["json", "bincode"]
+
+# 九期生
+## Chaos
+[[room]]
+roomid = 22389314
+channel = ["json", "bincode"]
+
+## 清良Kiyora
+[[room]]
+roomid = 22389323
+channel = ["json", "bincode"]
+
+## 起哈鲁
+[[room]]
+roomid = 22389323
+channel = ["json", "bincode"]
+
+# 十期生
+## 瑞芙
+[[room]]
+roomid = 22470204
+channel = ["json", "bincode"]
+
+## 星宸Sirius
+[[room]]
+roomid = 22470210
+channel = ["json", "bincode"]
+
+## uaua
+[[room]]
+roomid = 22470216
+channel = ["json", "bincode"]
+
+## 勺
+[[room]]
+roomid = 22470208
+channel = ["json", "bincode"]
+
