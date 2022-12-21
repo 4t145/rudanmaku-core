@@ -8,6 +8,7 @@ db = "virtuareal"
 host = "localhost"
 port = 27017
 
+[[room]]
 # 梦魇tsuki
 roomid = 851181
 channel = ["json", "bincode"]
@@ -143,3 +144,132 @@ channel = ["json", "bincode"]
 roomid = 22470208
 channel = ["json", "bincode"]
 
+[[room]]
+roomid = 22605469
+channel = ["json", "bincode"]
+
+[[room]]
+roomid = 22605469
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 22605463
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 22605466
+channel = ["json", "bincode"]
+
+[[room]]
+roomid = 22778627
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 22778610
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 22778596
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23017349
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23017343
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23260932
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23260993
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23260856
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23260979
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23550749
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23550773
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23550784
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23550793
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23805059
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23805029
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23805078
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 23805066
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 25788858
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 25788830
+channel = ["json", "bincode"]
+
+
+[[room]]
+roomid = 25788785
+channel = ["json", "bincode"]
+
+################## ---- ################## 
+################## ---- ################## 
+################## ---- ################## 
+################## Link ################## 
+################## ---- ################## 
+################## ---- ################## 
+################## ---- ################## 
+
+[[room]]
+# 510
+roomid = 510
+channel = ["json", "bincode"]
