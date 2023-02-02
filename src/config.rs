@@ -26,7 +26,8 @@ pub struct NetConfig {
 
 #[derive(Deserialize)]
 pub struct DbConfig {
-    pub mongo: Option<MongoConfig>
+    pub mongo: Option<MongoConfig>,
+    pub pg: Option<PgConfig>
 }
 
 #[derive(Deserialize)]
@@ -34,6 +35,11 @@ pub struct MongoConfig {
     pub db: String,
     pub host: String,
     pub port: u16
+}
+
+#[derive(Deserialize)]
+pub struct PgConfig {
+    pub url: String
 }
 
 pub fn get_config() -> Config {
@@ -78,7 +84,7 @@ pub fn get_config() -> Config {
                                 roomid,
                                 channel: vec![String::from("json"), String::from("bincode")]
                             }],
-                            db: DbConfig { mongo: None }
+                            db: DbConfig { mongo: None, pg: None }
                         };
                         return config;
                     } else {

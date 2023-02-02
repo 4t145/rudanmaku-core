@@ -11,7 +11,7 @@ port = 27017
 
 [[room]]
 roomid = 21457197
-channel = ["json", "bincode"]
+channel = ["json"]
 
 [[room]]
 roomid = 851181
