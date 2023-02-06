@@ -73,7 +73,7 @@ pub struct JsonConvertor;
 impl Convertor for JsonConvertor {
     fn convert(evt: Event) -> Message {
         let json = evt.to_json().unwrap();
-        dbg!(&json);
+        // dbg!(&json);
         Message::Text(json)
     }
 }

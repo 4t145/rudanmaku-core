@@ -5,7 +5,7 @@ use super::Consumer;
 
 use crate::model;
 use diesel::prelude::*;
-use diesel::r2d2::{Pool, ConnectionManager};
+use diesel::r2d2::{ConnectionManager, Pool};
 type PgPool = Pool<ConnectionManager<PgConnection>>;
 pub struct PgConsumer {
     receiver: Receiver<Event>,
@@ -32,16 +32,52 @@ impl Consumer for PgConsumer {
                             )).execute(&mut conn).unwrap_or_default();
                         }
                     },
+                    SuperChat { user, fans_medal, price, message, message_jpn: _ } => {
+                        if let Ok(mut conn) = pool.get() {
+                            diesel::insert_into(superchats::table).values(model::superchat::Superchat::new(
+                                room_id, user, fans_medal, price, message, time
+                            )).execute(&mut conn).unwrap_or_default();
+                        }
+                    },
+                    Gift { user, fans_medal, blindbox, gift } => {
+                        if let Ok(mut conn) = pool.get() {
+                            diesel::insert_into(gifts::table).values(model::gift::Gift::new(
+                                room_id, user, fans_medal, blindbox, gift, time
+                            )).execute(&mut conn).unwrap_or_default();
+                        }
+                    },
+                    GuardBuy { level, price, user } => {
+                        if let Ok(mut conn) = pool.get() {
+                            diesel::insert_into(guard_buys::table).values(model::guard_buy::GuardBuy::new(
+                                room_id, user, level, price, time
+                            )).execute(&mut conn).unwrap_or_default();
+                        }
+                    },
+                    EnterRoom { user, fans_medal } => {
+                        if let Ok(mut conn) = pool.get() {
+                            diesel::insert_into(enters::table).values(model::enter::Enter::new(
+                                room_id, user, fans_medal, time
+                            )).execute(&mut conn).unwrap_or_default();
+                        }
+                    }
+                    WatchedUpdate { num } => {
+                        if let Ok(mut conn) = pool.get() {
+                            diesel::insert_into(watcheds::table).values(model::watched::Watched::new(
+                                room_id, num, time
+                            )).execute(&mut conn).unwrap_or_default();
+                        }
+                    },
+                    PopularityUpdate { popularity } => {
+                        if let Ok(mut conn) = pool.get() {
+                            diesel::insert_into(popularitys::table).values(model::popularity::Popularity::new(
+                                room_id, popularity, time
+                            )).execute(&mut conn).unwrap_or_default();
+                        }
+                    },
                     _ => {
 
                     }
-                    //     EnterRoom { user, fans_medal } => todo!(),
                     //     BlindboxGift { user, fans_medal, blindbox_gift_type, gift } => todo!(),
-                    //     Gift { user, fans_medal, blindbox, gift } => todo!(),
-                    //     GuardBuy { level, price, user } => todo!(),
-                    //     SuperChat { user, fans_medal, price, message, message_jpn } => todo!(),
-                    //     WatchedUpdate { num } => todo!(),
-                    //     PopularityUpdate { popularity } => todo!(),
                     //     GuardEnterRoom { user } => todo!(),
                     //     HotRankChanged { area, rank, description } => todo!(),
                     //     HotRankSettlement { uname, face, area, rank } => todo!(),
